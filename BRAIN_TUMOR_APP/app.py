@@ -13,7 +13,7 @@ from PIL import Image
 # Custom imports
 # -----------------------------
 from losses.focal_loss import focal_loss
-from models.model_loader import load_model
+from models.model_loader import load_trained_model
 from utils.gradcam_utils import make_gradcam_heatmap
 from utils.pdf_generator import generate_report
 
@@ -53,15 +53,11 @@ st.sidebar.markdown("""
 # Load Model (Cached)
 # -----------------------------
 @st.cache_resource(show_spinner="🔄 Loading trained model...")
-def load_trained_model():
-    model = tf.keras.models.load_model(
-        MODEL_PATH,
-        custom_objects={
-            "focal_loss_fixed": focal_loss(),
-            "attention_block": attention_block
-        }
-    )
-    return model
+def get_model():
+    return load_trained_model({
+        "focal_loss_fixed": focal_loss(),
+        "attention_block": attention_block
+    })
 
 model = load_trained_model()
 
