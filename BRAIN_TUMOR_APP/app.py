@@ -1,183 +1,147 @@
-# =======================================================
-# app.py — Brain Tumor Detection Web App
-# =======================================================
-
-
 import streamlit as st
+import tensorflow as tf
 import numpy as np
 import cv2
 import os
-import tensorflow as tf
+import gdown
+import requests
 from PIL import Image
+from fpdf import FPDF
+import matplotlib.pyplot as plt
+from tensorflow.keras.applications.efficientnet import preprocess_input
 
-# -----------------------------
-# Custom imports
-# -----------------------------
-from losses.focal_loss import focal_loss_fixed
-from models.custom_objects import attention_block
-from models.model_loader import load_trained_model
-from utils.gradcam_utils import make_gradcam_heatmap
-from utils.pdf_generator import generate_report
-
-# -----------------------------
-# Page config
-# -----------------------------
+# ===================== PAGE CONFIG =====================
 st.set_page_config(
-    page_title="Brain Tumor Detection",
+    page_title="Brain Tumor Detection System",
     page_icon="🧠",
     layout="wide"
 )
 
-# -----------------------------
-# Load CSS (Bootstrap + Custom)
-# -----------------------------
-with open("assets/style.html") as f:
-    st.markdown(f.read(), unsafe_allow_html=True)
+# ===================== BOOTSTRAP STYLE =====================
+st.markdown("""
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body { background-color: #f8f9fa; }
+.card { border-radius: 12px; padding: 20px; }
+.title { font-weight: 700; color: #0d6efd; }
+</style>
+""", unsafe_allow_html=True)
 
-# -----------------------------
-# Constants
-# -----------------------------
-IMG_SIZE = (224, 224)
-CLASS_NAMES = ['glioma', 'meningioma', 'pituitary', 'no_tumor']
+# ===================== MODEL DOWNLOAD =====================
+MODEL_DIR = "MODEL"
+os.makedirs(MODEL_DIR, exist_ok=True)
 
-# -----------------------------
-# Sidebar
-# -----------------------------
-st.sidebar.title("🧠 Brain Tumor AI")
-st.sidebar.markdown("""
-**Deep Learning based MRI Analysis**
-- EfficientNetB3
-- Attention Mechanism
-- Grad-CAM Explainability
-""")
+STAGE1_ID = "1pGh_sA7m5BVXBZmqcXu8Hs91Z6XK5KGG"
+STAGE2_ID = "1mjh7KbLgxeibUZQJ_J2zDW60V0fngxMm"
 
-# -----------------------------
-# Load Model (Cached)
-# -----------------------------
-@st.cache_resource(show_spinner="🔄 Loading trained model...")
-def get_model():
-    return load_trained_model({
-        "focal_loss_fixed": focal_loss_fixed,
-        "attention_block": attention_block
-    })
+STAGE1_PATH = f"{MODEL_DIR}/stage1.keras"
+STAGE2_PATH = f"{MODEL_DIR}/stage2.keras"
 
-model = get_model()
+def download_model(file_id, path):
+    if not os.path.exists(path):
+        gdown.download(f"https://drive.google.com/uc?id={file_id}", path, quiet=False)
 
-# -----------------------------
-# Main UI
-# -----------------------------
-st.markdown(
-    "<h1 class='text-center'>Brain Tumor Detection from MRI</h1>",
-    unsafe_allow_html=True
-)
+download_model(STAGE1_ID, STAGE1_PATH)
+download_model(STAGE2_ID, STAGE2_PATH)
 
-st.markdown(
-    "<p class='text-center text-muted'>Upload an MRI image to analyze tumor presence</p>",
-    unsafe_allow_html=True
-)
+# ===================== LOAD MODELS =====================
+@st.cache_resource
+def load_models():
+    m1 = tf.keras.models.load_model(STAGE1_PATH, compile=False)
+    m2 = tf.keras.models.load_model(STAGE2_PATH, compile=False)
+    return m1, m2
 
-uploaded_file = st.file_uploader(
-    "📤 Upload Brain MRI Image",
-    type=["jpg", "jpeg", "png"]
-)
+stage1_model, stage2_model = load_models()
 
-# -----------------------------
-# Image Processing & Prediction
-# -----------------------------
-if uploaded_file:
-    col1, col2 = st.columns(2)
+CLASS_NAMES = ["glioma", "meningioma", "pituitary"]
 
-    # Load image
-    image = Image.open(uploaded_file).convert("RGB")
-    image_resized = image.resize(IMG_SIZE)
+# ===================== UTILS =====================
+def preprocess(img):
+    img = cv2.resize(img, (300,300))
+    img = preprocess_input(img)
+    return np.expand_dims(img, axis=0)
 
-    img_array = np.array(image_resized) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # Display original image
-    with col1:
-        st.subheader("🖼 Uploaded MRI")
-        st.image(image, use_column_width=True)
-
-    # Prediction
-    preds = model.predict(img_array)
-    class_idx = np.argmax(preds)
-    confidence = float(preds[0][class_idx]) * 100
-    predicted_class = CLASS_NAMES[class_idx]
-
-    # Display prediction
-    with col2:
-        st.subheader("📊 Prediction Result")
-        st.markdown(f"""
-        <div class="alert alert-info">
-        <b>Predicted Class:</b> {predicted_class.upper()}<br>
-        <b>Confidence:</b> {confidence:.2f}%
-        </div>
-        """, unsafe_allow_html=True)
-
-    # -----------------------------
-    # Grad-CAM
-    # -----------------------------
-    st.subheader("🔥 Grad-CAM Visualization")
-
-    heatmap = make_gradcam_heatmap(
-        img_array,
-        model,
-        last_conv_layer_name="top_conv"
+def gradcam(model, img_array, layer_name):
+    grad_model = tf.keras.models.Model(
+        [model.inputs], [model.get_layer(layer_name).output, model.output]
     )
+    with tf.GradientTape() as tape:
+        conv_out, preds = grad_model(img_array)
+        loss = preds[:, np.argmax(preds[0])]
+    grads = tape.gradient(loss, conv_out)
+    pooled = tf.reduce_mean(grads, axis=(0,1,2))
+    heatmap = tf.reduce_sum(tf.multiply(pooled, conv_out), axis=-1)
+    heatmap = np.maximum(heatmap[0], 0)
+    return heatmap / np.max(heatmap)
 
-    heatmap = cv2.resize(heatmap, IMG_SIZE)
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+def find_hospitals(city):
+    url = f"https://nominatim.openstreetmap.org/search?q=neurosurgery+hospital+{city}&format=json"
+    res = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}).json()
+    return res[:5]
 
-    original = np.uint8(img_array[0] * 255)
-    superimposed = cv2.addWeighted(original, 0.6, heatmap, 0.4, 0)
+def generate_pdf(result, prob):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial","B",14)
+    pdf.cell(0,10,"Brain Tumor Detection Report",ln=True)
+    pdf.ln(5)
+    pdf.set_font("Arial","",12)
+    pdf.cell(0,10,f"Prediction: {result}",ln=True)
+    pdf.cell(0,10,f"Confidence: {prob:.2f}%",ln=True)
+    path = "report.pdf"
+    pdf.output(path)
+    return path
 
-    st.image(
-        superimposed,
-        caption="Grad-CAM: Model Attention Regions",
-        use_column_width=True
-    )
+# ===================== UI =====================
+st.markdown("<h1 class='title text-center'>🧠 Brain Tumor Detection & Analysis</h1>", unsafe_allow_html=True)
+st.markdown("---")
 
-    # Save images temporarily
-    os.makedirs("temp", exist_ok=True)
-    input_img_path = "temp/input.png"
-    gradcam_img_path = "temp/gradcam.png"
+col1, col2 = st.columns([1,1])
 
-    cv2.imwrite(input_img_path, cv2.cvtColor(original, cv2.COLOR_RGB2BGR))
-    cv2.imwrite(gradcam_img_path, superimposed)
+with col1:
+    st.markdown("### 📤 Upload MRI Image")
+    uploaded = st.file_uploader("", type=["jpg","png","jpeg"])
 
-    # -----------------------------
-    # PDF Report
-    # -----------------------------
-    st.subheader("📄 Medical Report")
+with col2:
+    city = st.text_input("📍 Enter your city for nearby hospitals")
 
-    if st.button("📥 Generate PDF Report"):
-        pdf_path = generate_report(
-            input_img_path,
-            predicted_class,
-            confidence,
-            gradcam_img_path
-        )
+# ===================== PREDICTION =====================
+if uploaded:
+    image = Image.open(uploaded).convert("RGB")
+    img_np = np.array(image)
 
+    st.image(image, caption="Uploaded MRI", width=300)
+
+    img_array = preprocess(img_np)
+
+    stage1_pred = stage1_model.predict(img_array)[0][0]
+
+    if stage1_pred < 0.5:
+        st.success("✅ No Tumor Detected")
+    else:
+        st.warning("⚠ Tumor Detected")
+        probs = stage2_model.predict(img_array)[0]
+        idx = np.argmax(probs)
+
+        st.markdown(f"### 🧪 Tumor Type: **{CLASS_NAMES[idx].upper()}**")
+        st.progress(float(probs[idx]))
+
+        # ===================== GRADCAM =====================
+        heatmap = gradcam(stage2_model, img_array, stage2_model.layers[-6].name)
+        heatmap = cv2.resize(heatmap, (img_np.shape[1], img_np.shape[0]))
+        heatmap = cv2.applyColorMap(np.uint8(255*heatmap), cv2.COLORMAP_JET)
+        overlay = cv2.addWeighted(img_np, 0.6, heatmap, 0.4, 0)
+
+        st.markdown("### 🔍 Model Explainability (Grad-CAM)")
+        st.image(overlay, width=300)
+
+        # ===================== HOSPITALS =====================
+        if city:
+            st.markdown("### 🏥 Nearby Hospitals")
+            for h in find_hospitals(city):
+                st.write("•", h.get("display_name",""))
+
+        # ===================== PDF =====================
+        pdf_path = generate_pdf(CLASS_NAMES[idx], probs[idx]*100)
         with open(pdf_path, "rb") as f:
-            st.download_button(
-                label="Download Medical Report (PDF)",
-                data=f,
-                file_name="Brain_MRI_Report.pdf",
-                mime="application/pdf"
-            )
-
-# -----------------------------
-# Footer
-# -----------------------------
-st.markdown(
-    """
-    <hr>
-    <p class="text-center text-muted">
-    ⚠ This tool is for educational & research purposes only.<br>
-    Not a replacement for professional medical diagnosis.
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+            st.download_button("📄 Download Report", f, file_name="Brain_Tumor_Report.pdf")

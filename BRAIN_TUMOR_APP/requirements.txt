@@ -3,6 +3,8 @@ tensorflow
 numpy
 opencv-python
 pillow
-reportlab
-gdown
+matplotlib
 scikit-learn
+gdown
+fpdf
+requests
