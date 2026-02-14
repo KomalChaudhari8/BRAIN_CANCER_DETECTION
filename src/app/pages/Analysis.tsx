@@ -63,7 +63,7 @@ export default function Analysis() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/detect-tumor`,
+        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/detect-tumor`,
         {
           method: 'POST',
           headers: {
@@ -109,7 +109,7 @@ export default function Analysis() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/classify-tumor`,
+        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/classify-tumor`,
         {
           method: 'POST',
           headers: {
@@ -179,7 +179,7 @@ export default function Analysis() {
       setGradcamImage(imageData);
 
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/generate-gradcam`,
+        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/generate-gradcam`,
         {
           method: 'POST',
           headers: {
@@ -220,7 +220,7 @@ export default function Analysis() {
           const { latitude, longitude } = position.coords;
 
           const response = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals`,
+            `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals`,
             {
               method: 'POST',
               headers: {
@@ -249,7 +249,7 @@ export default function Analysis() {
           
           // Fallback to default location
           fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals`,
+            `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals`,
             {
               method: 'POST',
               headers: {
@@ -277,7 +277,7 @@ export default function Analysis() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-cfefc943/generate-report`,
+        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/generate-report`,
         {
           method: 'POST',
           headers: {
