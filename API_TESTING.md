@@ -14,7 +14,7 @@ You'll need:
 ## 📍 Base URL
 
 ```
-https://[YOUR_PROJECT_ID].supabase.co/functions/v1/make-server-cfefc943
+https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943
 ```
 
 Replace `[YOUR_PROJECT_ID]` with your actual Supabase project ID (found in `/utils/supabase/info.tsx`)
@@ -26,7 +26,7 @@ Replace `[YOUR_PROJECT_ID]` with your actual Supabase project ID (found in `/uti
 **Purpose**: Verify the server is running
 
 ```bash
-curl https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/health
+curl https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/health
 ```
 
 **Expected Response**:
@@ -44,7 +44,7 @@ curl https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/health
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/upload-mri \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/upload-mri \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -F "file=@/path/to/mri_scan.jpg" \
   -F "patientId=test-patient-001"
@@ -69,7 +69,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/detect-tumor \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/detect-tumor \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -98,7 +98,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/classify-tumor \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/classify-tumor \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -126,7 +126,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/generate-gradcam \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/generate-gradcam \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -154,7 +154,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/nearby-hospitals \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -189,7 +189,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/generate-report \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/generate-report \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -228,7 +228,7 @@ curl -X POST \
 
 ```bash
 curl -X GET \
-  https://YOUR_PROJECT.supabase.co/functions/v1/make-server-cfefc943/reports/REPORT_ID \
+  https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/make-server-cfefc943/reports/REPORT_ID \
   -H "Authorization: Bearer YOUR_PUBLIC_ANON_KEY"
 ```
 
