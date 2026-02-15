@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
-import * as kv from "./kv_store.tsx"; // make sure this exports async get/set
+import * as kv from "./kv_store.ts"; // make sure this exports async get/set
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Initialize Hono app
