@@ -41,7 +41,7 @@ export default function Home() {
       formData.append('patientId', `patient-${Date.now()}`);
 
       const response = await fetch(
-        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/server/make-server-cfefc943/upload-mri`,
+        `https://tbxyjwpcrzbdtuuraowe.supabase.co/functions/v1/server/upload-mri`,
         {
           method: 'POST',
           headers: {

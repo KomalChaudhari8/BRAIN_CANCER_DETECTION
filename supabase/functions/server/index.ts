@@ -20,7 +20,7 @@ const kv = new Map();
 // ==============================
 // Upload MRI
 // ==============================
-app.post("/make-server-cfefc943/upload-mri", async (c) => {
+app.post("/upload-mri", async (c) => {
   try {
     const { fileName, base64Image } = await c.req.json();
     if (!fileName || !base64Image) {
@@ -67,7 +67,7 @@ app.post("/make-server-cfefc943/upload-mri", async (c) => {
 // ==============================
 // Detect Tumor (REAL AI)
 // ==============================
-app.post("/make-server-cfefc943/detect-tumor", async (c) => {
+app.post("/detect-tumor", async (c) => {
   try {
     const { scanId } = await c.req.json();
     if (!scanId) return c.json({ error: "No scanId provided" }, 400);
@@ -125,7 +125,7 @@ app.post("/make-server-cfefc943/detect-tumor", async (c) => {
 // ==============================
 // Generate Grad-CAM (Placeholder)
 // ==============================
-app.post("/make-server-cfefc943/generate-gradcam", async (c) => {
+app.post("/generate-gradcam", async (c) => {
   try {
     const { scanId } = await c.req.json();
     if (!scanId) return c.json({ error: "No scanId provided" }, 400);
@@ -147,7 +147,7 @@ app.post("/make-server-cfefc943/generate-gradcam", async (c) => {
 // ==============================
 // Generate Report
 // ==============================
-app.post("/make-server-cfefc943/generate-report", async (c) => {
+app.post("/generate-report", async (c) => {
   try {
     const { scanId } = await c.req.json();
     if (!scanId) return c.json({ error: "No scanId provided" }, 400);
